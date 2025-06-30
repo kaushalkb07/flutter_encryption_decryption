@@ -1,4 +1,4 @@
-# drop_encryption
+# encryption
 
 A new Flutter project.
 
