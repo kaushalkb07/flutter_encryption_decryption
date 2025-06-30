@@ -43,3 +43,14 @@ class _KeyPairPageState extends State<KeyPairPage> {
     );
   }
 }
+
+// Call this function after generating keyPairEntity (public & private keys)
+Future<void> uploadUserPublicKey(List<int> publicKey) async {
+  final uploader = UploadPublicKeyUseCase(PublicKeyRepositoryImpl());
+  try {
+    await uploader(publicKey, 'user_001'); // Replace with actual user ID
+    print('Uploaded public key to Firestore');
+  } catch (e) {
+    print('Error uploading key: $e');
+  }
+}
