@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:http/http.dart' as http;
@@ -25,17 +24,26 @@ class KeyPairRepositoryImpl implements KeyPairRepository {
 
 // implements the contract defined in the domain layer.
 class PublicKeyRepositoryImpl implements PublicKeyRepository {
-  final _firestore = FirebaseFirestore.instance;
-
   @override
   Future<void> uploadPublicKey(List<int> publicKey, String userId) async {
     final base64Key = base64Encode(publicKey);
+    const url = 'https://yourserver.com/api/upload-key'; // Replace with your actual API
 
-    await _firestore.collection('users').doc(userId).set({
-      'public_key': base64Key,
-      'updated_at': FieldValue.serverTimestamp(),
-    });
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'user_id': userId,
+        'public_key': base64Key,
+      }),
+    );
 
-    print('✅ Public key uploaded to Firestore for $userId');
+    if (response.statusCode == 200) {
+      print('Public key uploaded successfully');
+    } else {
+      throw Exception('Failed to upload key: ${response.statusCode} ${response.body}');
+    }
   }
 }

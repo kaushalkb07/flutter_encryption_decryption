@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Import Firebase core
 import 'features/keypair/presentation/keypair_page.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();  // Ensures binding before async calls
-  await Firebase.initializeApp();              // Initialize Firebase
+void main() async { 
 
   runApp(const MyApp());
 }
