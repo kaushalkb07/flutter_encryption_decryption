@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../application/usecases/generate_keypair_usecase.dart';
-import '../application/usecases/upload_public_key_usecase.dart';
+import '../application/usecases/upload_keypair_usecase.dart';
 import '../data/repositories/keypair_repository_impl.dart';
-import '../data/repositories/public_key_repository_impl.dart';
+import '../data/repositories/keypair_upload_repository_impl.dart';
 
 class KeyPairPage extends StatefulWidget {
   const KeyPairPage({super.key});
@@ -17,29 +17,38 @@ class _KeyPairPageState extends State<KeyPairPage> {
   String _privateKey = '';
   String _uploadStatus = '';
 
-  Future<void> _handleKeyGeneration() async {
-    final keyPairUseCase = GenerateKeyPairUseCase(KeyPairRepositoryImpl());
-    final uploadUseCase = UploadPublicKeyUseCase(PublicKeyRepositoryImpl());
-
-    final keyPair = await keyPairUseCase.call();
-
-    final pubEncoded = base64Encode(keyPair.publicKey);
-    final privEncoded = base64Encode(keyPair.privateKey);
+  Future<void> _handleKeyGenerationAndUpload() async {
+    final generateKeyUseCase = GenerateKeyPairUseCase(KeyPairRepositoryImpl());
+    final uploadKeyUseCase = UploadKeypairUseCase(KeypairUploadRepositoryImpl());
 
     setState(() {
-      _publicKey = pubEncoded;
-      _privateKey = privEncoded;
-      _uploadStatus = 'Uploading...';
+      _uploadStatus = '🔄 Generating keys...';
     });
 
     try {
-      await uploadUseCase.call(keyPair.publicKey, 'user_001');
+      final keyPair = await generateKeyUseCase.call();
+
+      final encodedPublic = base64Encode(keyPair.publicKey);
+      final encodedPrivate = base64Encode(keyPair.privateKey);
+
       setState(() {
-        _uploadStatus = 'Upload complete';
+        _publicKey = encodedPublic;
+        _privateKey = encodedPrivate;
+        _uploadStatus = '📤 Uploading to server...';
+      });
+
+      await uploadKeyUseCase.call(
+        userId: 'user_001', // Replace with actual user ID logic
+        publicKey: keyPair.publicKey,
+        privateKey: keyPair.privateKey,
+      );
+
+      setState(() {
+        _uploadStatus = '✅ Upload complete';
       });
     } catch (e) {
       setState(() {
-        _uploadStatus = 'Upload failed: $e';
+        _uploadStatus = '❌ Upload failed: $e';
       });
     }
   }
@@ -47,20 +56,21 @@ class _KeyPairPageState extends State<KeyPairPage> {
   @override
   void initState() {
     super.initState();
-    _handleKeyGeneration();
+    _handleKeyGenerationAndUpload();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Key Generator')),
+      appBar: AppBar(title: const Text('🔐 Key Generator & Uploader')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
           child: SelectableText(
-            'Public Key (base64):\n$_publicKey\n\n'
-            'Private Key (base64):\n$_privateKey\n\n'
-            'Upload Status: $_uploadStatus',
+            '📌 Public Key (Base64):\n$_publicKey\n\n'
+            '🔒 Private Key (Base64):\n$_privateKey\n\n'
+            '📡 Status: $_uploadStatus',
+            style: const TextStyle(fontSize: 14),
           ),
         ),
       ),
