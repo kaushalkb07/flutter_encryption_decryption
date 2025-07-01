@@ -15,8 +15,8 @@ class PublicKeyRepositoryImpl implements PublicKeyRepository {
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'user_id': userId,
-          'public_key': base64Key,
+          'userId': userId,
+          'publicKey': base64Key,
         }),
       );
 
