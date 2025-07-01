@@ -14,7 +14,7 @@ It handles:
 
 ## API Spec <br> `/api/upload-key`
 
-```bash
+```json
 {
   "user_id": "user_001",
   "public_key": "base64_encoded_public_key"
