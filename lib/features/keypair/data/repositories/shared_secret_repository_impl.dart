@@ -9,8 +9,16 @@ class SharedSecretRepositoryImpl implements SharedSecretRepository {
     required List<int> myPrivateKey,
     required List<int> otherPublicKey,
   }) async {
+    // Create a SimpleKeyPair from the private key
+    final keyPair = await _algorithm.newKeyPairFromSeed(myPrivateKey);
+
+    // Extract public key bytes from the key pair
+    final publicKeyBytes = await keyPair.extractPublicKey();
+
+    // Create SimpleKeyPairData with both private and public key bytes
     final privateKey = SimpleKeyPairData(
       myPrivateKey,
+      publicKey: publicKeyBytes, // Provide the public key
       type: KeyPairType.x25519,
     );
 
