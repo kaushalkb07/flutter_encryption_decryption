@@ -18,7 +18,7 @@ class KeyPairPage extends StatefulWidget {
 }
 
 class _KeyPairPageState extends State<KeyPairPage> {
-  final SecureLocalStorage _secureStorage = SecureLocalStorage();
+  final KeyPairLocalStorage _secureStorage = KeyPairLocalStorage();
   final String baseUrl = 'https://dropweb.cloud'; // Your backend URL
 
   KeyPairEntity? _user1KeyPair;
@@ -53,7 +53,8 @@ class _KeyPairPageState extends State<KeyPairPage> {
           userId: 'user1',
           publicKey: keyPair.publicKey,
           privateKey: keyPair.privateKey,
-          authToken: 'user1_token', // replace with real token
+          authToken:
+              'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODRkMzYzNjM0OTQxMTA3OWY0ZjkwYTciLCJ1c2VybmFtZSI6ImRyb3AiLCJzZXNzaW9uSWQiOiI2ODY0YjVjMTUzNjM0OTQ1YmFmMzIwZTEiLCJpYXQiOjE3NTE0MzA1OTQsImV4cCI6MTc1MjAzNTM5NH0.IMqtawKMbFZGtw6GEXvVr88JsCap5bY9sorc049YFKBSfm52_nYiFlT2IcVdsoHQOI3nT1WYDFX-AsRZjbaWfwlEGYRK6UO5gD9mTBrFTfRnIdn_VcQqEnCr9Tit0N3YRGp_fKkvfsDHd_V-2Tdito2tIfMO0sRdqaJRThOvSG8',
         );
         _user1Pub = base64Encode(keyPair.publicKey);
         _uploadStatus = 'User 1 keys uploaded.';
@@ -64,7 +65,8 @@ class _KeyPairPageState extends State<KeyPairPage> {
           userId: 'user2',
           publicKey: keyPair.publicKey,
           privateKey: keyPair.privateKey,
-          authToken: 'user2_token', // replace with real token
+          authToken:
+              'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2ODRkMzYzNjM0OTQxMTA3OWY0ZjkwYTciLCJ1c2VybmFtZSI6ImRyb3AiLCJzZXNzaW9uSWQiOiI2ODY0YjVjMTUzNjM0OTQ1YmFmMzIwZTEiLCJpYXQiOjE3NTE0MzA1OTQsImV4cCI6MTc1MjAzNTM5NH0.IMqtawKMbFZGtw6GEXvVr88JsCap5bY9sorc049YFKBSfm52_nYiFlT2IcVdsoHQOI3nT1WYDFX-AsRZjbaWfwlEGYRK6UO5gD9mTBrFTfRnIdn_VcQqEnCr9Tit0N3YRGp_fKkvfsDHd_V-2Tdito2tIfMO0sRdqaJRThOvSG8',
         );
         _user2Pub = base64Encode(keyPair.publicKey);
         _uploadStatus = 'User 2 keys uploaded.';
@@ -121,13 +123,14 @@ class _KeyPairPageState extends State<KeyPairPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ElevatedButton(
-                onPressed:
-                    _tapCount < 2 ? _handleKeyGeneration : null, // disable after 2 taps
-                child: Text(_tapCount == 0
-                    ? 'Generate & Upload for User 1'
-                    : _tapCount == 1
-                        ? 'Generate & Upload for User 2'
-                        : 'Completed'),
+                onPressed: _tapCount < 2 ? _handleKeyGeneration : null,
+                child: Text(
+                  _tapCount == 0
+                      ? 'Generate & Upload for User 1'
+                      : _tapCount == 1
+                          ? 'Generate & Upload for User 2'
+                          : 'Completed',
+                ),
               ),
               const SizedBox(height: 20),
               SelectableText('User 1 Public Key:\n$_user1Pub\n'),
