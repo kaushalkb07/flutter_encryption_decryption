@@ -3,5 +3,6 @@ abstract class KeyPairUploadRepository {
     required String userId,
     required List<int> publicKey,
     required List<int> privateKey,
+    required String authToken,
   });
 }

@@ -1,9 +1,14 @@
-// lib/features/keypair/presentation/keypair_page.dart
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../application/usecases/generate_keypair_usecase.dart';
-import '../data/repositories/keypair_repository_impl.dart';
-import '../data/repositories/keypair_upload_repository_impl.dart';
+
+import '../../keypair/application/usecases/generate_keypair_usecase.dart';
+import '../../keypair/application/usecases/upload_keypair_usecase.dart';
+import '../../keypair/application/usecases/generate_shared_secret_usecase.dart';
+import '../../keypair/data/datasources/keypair_local_storage.dart';
+import '../../keypair/data/repositories/keypair_repository_impl.dart';
+import '../../keypair/data/repositories/keypair_upload_repository_impl.dart';
+import '../../keypair/data/repositories/shared_secret_repository_impl.dart';
+import '../../keypair/domain/entities/keypair_entity.dart';
 
 class KeyPairPage extends StatefulWidget {
   const KeyPairPage({super.key});
@@ -13,49 +18,125 @@ class KeyPairPage extends StatefulWidget {
 }
 
 class _KeyPairPageState extends State<KeyPairPage> {
-  String _status = 'Press button to generate and upload keys';
+  final SecureLocalStorage _secureStorage = SecureLocalStorage();
+  final String baseUrl = 'https://dropweb.cloud'; // Your backend URL
 
-  Future<void> _generateAndUpload() async {
+  KeyPairEntity? _user1KeyPair;
+  KeyPairEntity? _user2KeyPair;
+
+  String _user1Pub = '';
+  String _user2Pub = '';
+  String _sharedSecret = '';
+
+  String _uploadStatus = '';
+  String _sharedSecretStatus = '';
+  int _tapCount = 0;
+
+  Future<void> _handleKeyGeneration() async {
     setState(() {
-      _status = 'Generating keys...';
+      _uploadStatus = 'Generating keys...';
+      _sharedSecretStatus = '';
     });
 
-    final userId = 'user_001'; // Replace with actual logged-in user ID
-    final baseUrl = 'https://dropweb.cloud'; // Your backend base URL
-
-    final generateUseCase = GenerateAndUploadKeyPairUseCase(
-      KeyPairRepositoryImpl(),
-      KeyPairUploadRepositoryImpl(baseUrl),
-    );
-
     try {
-      await generateUseCase.call(userId);
-      setState(() {
-        _status = 'Keys generated and uploaded successfully!';
-      });
+      final keyPairRepo = KeyPairRepositoryImpl();
+      final uploadRepo = KeyPairUploadRepositoryImpl(baseUrl);
+      final generateKeyUseCase = GenerateKeyPairUseCase(keyPairRepo);
+      final uploadKeyUseCase = UploadKeyPairUseCase(uploadRepo);
+
+      final keyPair = await generateKeyUseCase.call();
+
+      if (_tapCount == 0) {
+        // User 1
+        _user1KeyPair = keyPair;
+        await uploadKeyUseCase.call(
+          userId: 'user1',
+          publicKey: keyPair.publicKey,
+          privateKey: keyPair.privateKey,
+          authToken: 'user1_token', // replace with real token
+        );
+        _user1Pub = base64Encode(keyPair.publicKey);
+        _uploadStatus = 'User 1 keys uploaded.';
+      } else if (_tapCount == 1) {
+        // User 2
+        _user2KeyPair = keyPair;
+        await uploadKeyUseCase.call(
+          userId: 'user2',
+          publicKey: keyPair.publicKey,
+          privateKey: keyPair.privateKey,
+          authToken: 'user2_token', // replace with real token
+        );
+        _user2Pub = base64Encode(keyPair.publicKey);
+        _uploadStatus = 'User 2 keys uploaded.';
+
+        // Now generate shared secret locally
+        final sharedSecretUseCase =
+            GenerateSharedSecretUseCase(SharedSecretRepositoryImpl());
+
+        final secret = await sharedSecretUseCase.call(
+          myPrivateKey: _user1KeyPair!.privateKey,
+          otherPublicKey: _user2KeyPair!.publicKey,
+        );
+
+        final encodedSecret = base64Encode(secret);
+        await _secureStorage.save('shared_secret_user1_user2', encodedSecret);
+
+        _sharedSecret = encodedSecret;
+        _sharedSecretStatus = 'Shared secret generated and stored locally.';
+      } else {
+        _uploadStatus = 'All keys generated.';
+      }
+
+      _tapCount++;
     } catch (e) {
+      _uploadStatus = 'Error: $e';
+    }
+
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _loadSharedSecret() async {
+    final secret = await _secureStorage.read('shared_secret_user1_user2');
+    if (mounted) {
       setState(() {
-        _status = 'Failed to upload keys: $e';
+        _sharedSecret = secret ?? 'Not generated yet.';
       });
     }
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadSharedSecret();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Key Pair Generator')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+      appBar: AppBar(title: const Text('Key Pair Generator & Shared Secret')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_status, textAlign: TextAlign.center),
-              const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _generateAndUpload,
-                child: const Text('Generate & Upload Keys'),
+                onPressed:
+                    _tapCount < 2 ? _handleKeyGeneration : null, // disable after 2 taps
+                child: Text(_tapCount == 0
+                    ? 'Generate & Upload for User 1'
+                    : _tapCount == 1
+                        ? 'Generate & Upload for User 2'
+                        : 'Completed'),
               ),
+              const SizedBox(height: 20),
+              SelectableText('User 1 Public Key:\n$_user1Pub\n'),
+              SelectableText('User 2 Public Key:\n$_user2Pub\n'),
+              const SizedBox(height: 20),
+              SelectableText('Shared Secret (base64):\n$_sharedSecret\n'),
+              const SizedBox(height: 20),
+              Text('Upload Status: $_uploadStatus'),
+              Text('Shared Secret Status: $_sharedSecretStatus'),
             ],
           ),
         ),
