@@ -1,3 +1,5 @@
+// lib/features/auth/application/usecases/login_usecase.dart
+
 import '../../domain/repositories/auth_repository.dart';
 
 class LoginUseCase {
@@ -5,7 +7,7 @@ class LoginUseCase {
 
   LoginUseCase(this.repository);
 
-  Future<String> call(String username, String password) {
-    return repository.login(username: username, password: password);
+  Future<String> call({required String username, required String pass}) {
+    return repository.login(username: username, pass: pass);
   }
 }

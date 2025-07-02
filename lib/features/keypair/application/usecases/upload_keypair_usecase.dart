@@ -1,21 +1,23 @@
+// lib/features/keypair/application/usecases/upload_keypair_usecase.dart
+
 import '../../domain/repositories/keypair_upload_repository.dart';
 
-class UploadKeypairUseCase {
-  final KeypairUploadRepository repository;
+class UploadKeyPairUseCase {
+  final KeyPairUploadRepository repository;
 
-  UploadKeypairUseCase(this.repository);
+  UploadKeyPairUseCase(this.repository);
 
   Future<void> call({
     required String userId,
-    required String deviceId,
     required List<int> publicKey,
     required List<int> privateKey,
-  }) {
-    return repository.uploadKeypair(
+    required String token, // <-- make sure this is here
+  }) async {
+    await repository.uploadKeyPair(
       userId: userId,
-      deviceId: deviceId,
       publicKey: publicKey,
       privateKey: privateKey,
+      token: token, // <-- pass it here
     );
   }
 }
