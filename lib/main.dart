@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'features/keypair/presentation/keypair_page.dart';
+import 'features/auth/presentation/login_page.dart';
 
-void main() async { 
-
+void main() {
   runApp(const MyApp());
 }
 
@@ -12,13 +11,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Clean Crypto Key Generator',
+      title: 'Secure Messaging',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        useMaterial3: true,
-      ),
-      home: const KeyPairPage(),
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.deepPurple),
+      home: const LoginPage(),
     );
   }
 }

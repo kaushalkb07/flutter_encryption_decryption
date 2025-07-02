@@ -1,6 +1,7 @@
 abstract class KeypairUploadRepository {
-  Future<void> uploadKeyPair({
+  Future<void> uploadKeypair({
     required String userId,
+    required String deviceId,
     required List<int> publicKey,
     required List<int> privateKey,
   });

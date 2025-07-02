@@ -7,11 +7,13 @@ class UploadKeypairUseCase {
 
   Future<void> call({
     required String userId,
+    required String deviceId,
     required List<int> publicKey,
     required List<int> privateKey,
   }) {
-    return repository.uploadKeyPair(
+    return repository.uploadKeypair(
       userId: userId,
+      deviceId: deviceId,
       publicKey: publicKey,
       privateKey: privateKey,
     );
