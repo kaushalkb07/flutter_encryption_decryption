@@ -1,5 +1,3 @@
-// lib/features/chat/domain/entities/message_entity.dart
-
 class MessageEntity {
   final String sender;
   final String encryptedMessage;

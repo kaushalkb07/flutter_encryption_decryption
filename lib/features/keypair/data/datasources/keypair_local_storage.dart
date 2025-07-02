@@ -11,7 +11,17 @@ class KeyPairLocalStorage {
     return await _storage.read(key: key);
   }
 
-  Future<void> delete(String key) async {
-    await _storage.delete(key: key);
+  // ✅ Add this method to retrieve both keys
+  Future<Map<String, String>?> getKeys() async {
+    final publicKey = await _storage.read(key: 'publicKey');
+    final privateKey = await _storage.read(key: 'privateKey');
+
+    if (publicKey != null && privateKey != null) {
+      return {
+        'publicKey': publicKey,
+        'privateKey': privateKey,
+      };
+    }
+    return null;
   }
 }

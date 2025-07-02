@@ -1,13 +1,18 @@
-// lib/features/chat/application/usecases/encrypt_message_usecase.dart
-
-import '../../domain/repositories/chat_repository.dart';
+import 'package:cryptography/cryptography.dart';
 
 class EncryptMessageUseCase {
-  final ChatRepository repository;
+  final SecretKey secretKey;
 
-  EncryptMessageUseCase(this.repository);
+  EncryptMessageUseCase(this.secretKey);
 
-  Future<String> call(String message, List<int> sharedSecret) {
-    return repository.encrypt(message, sharedSecret);
+  Future<List<int>> call(String message) async {
+    final algorithm = AesGcm.with256bits();
+    final nonce = algorithm.newNonce();
+    final secretBox = await algorithm.encrypt(
+      message.codeUnits,
+      secretKey: secretKey,
+      nonce: nonce,
+    );
+    return [...nonce, ...secretBox.cipherText, ...secretBox.mac.bytes];
   }
 }

@@ -1,81 +1,72 @@
-// lib/features/chat/presentation/chat_page.dart
-import 'package:flutter/material.dart';
 import 'dart:convert';
-import '../../../keypair/data/datasources/keypair_local_storage.dart';
-import '../../data/repositories/chat_repository_impl.dart';
-import '../../domain/entities/message_entity.dart';
-import '../../application/usecases/encrypt_message_usecase.dart';
-import '../../application/usecases/decrypt_message_usecase.dart';
+import 'package:flutter/material.dart';
+import 'package:cryptography/cryptography.dart';
+
+import '../domain/entities/message_entity.dart';
+import '../data/repositories/chat_repository_impl.dart';
+import '../application/usecases/encrypt_message_usecase.dart';
+import '../application/usecases/decrypt_message_usecase.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  final List<int> sharedSecret;
+
+  const ChatPage({super.key, required this.sharedSecret});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
 }
 
 class _ChatPageState extends State<ChatPage> {
-  final _controller = TextEditingController();
-  final _secureStorage = KeyPairLocalStorage();
-
+  final _messageController = TextEditingController();
   final _chatRepo = ChatRepositoryImpl();
-  final List<MessageEntity> _messages = [];
-
-  late EncryptMessageUseCase _encryptMessageUseCase;
-  late DecryptMessageUseCase _decryptMessageUseCase;
-  List<int> _sharedSecret = [];
+  late SecretKey _secretKey;
 
   @override
   void initState() {
     super.initState();
-    _encryptMessageUseCase = EncryptMessageUseCase(_chatRepo);
-    _decryptMessageUseCase = DecryptMessageUseCase(_chatRepo);
-    _loadSharedSecret();
+    _secretKey = SecretKey(widget.sharedSecret);
   }
 
-  Future<void> _loadSharedSecret() async {
-    final base64Secret = await _secureStorage.read('shared_secret_user1_user2');
-    if (base64Secret != null) {
-      _sharedSecret = base64Decode(base64Secret);
-    }
-  }
+  void _sendMessage(String sender) async {
+    final plainText = _messageController.text.trim();
+    if (plainText.isEmpty) return;
 
-  Future<void> _sendMessage(String sender, String receiver) async {
-    final text = _controller.text;
-    if (text.isEmpty || _sharedSecret.isEmpty) return;
+    final encryptUseCase = EncryptMessageUseCase(_secretKey);
+    final encrypted = await encryptUseCase.call(plainText);
+    final decryptUseCase = DecryptMessageUseCase(_secretKey);
+    final decrypted = await decryptUseCase.call(encrypted);
 
-    final encrypted = await _encryptMessageUseCase.call(text, _sharedSecret);
-    final decrypted =
-        await _decryptMessageUseCase.call(encrypted, _sharedSecret);
+    final message = MessageEntity(
+      sender: sender,
+      encryptedMessage: base64Encode(encrypted),
+      decryptedMessage: decrypted,
+    );
 
     setState(() {
-      _messages.add(MessageEntity(
-        sender: sender,
-        receiver: receiver,
-        plainText: decrypted,
-        encryptedText: encrypted,
-      ));
-      _controller.clear();
+      _chatRepo.addMessage(message);
+      _messageController.clear();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final messages = _chatRepo.getAllMessages();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Secure Chat')),
+      appBar: AppBar(title: const Text('Encrypted Chat')),
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             Expanded(
               child: ListView.builder(
-                itemCount: _messages.length,
-                itemBuilder: (_, i) {
-                  final msg = _messages[i];
+                itemCount: messages.length,
+                itemBuilder: (_, index) {
+                  final msg = messages[index];
                   return ListTile(
-                    title: Text('Encrypted: ${msg.encryptedText}'),
-                    subtitle: Text('Decrypted: ${msg.plainText}'),
-                    leading: Text(msg.sender),
+                    title: Text('Encrypted: ${msg.encryptedMessage}'),
+                    subtitle: Text('Decrypted: ${msg.decryptedMessage}'),
+                    trailing: Text(msg.sender),
                   );
                 },
               ),
@@ -84,17 +75,18 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _controller,
-                    decoration:
-                        const InputDecoration(hintText: 'Type a message...'),
+                    controller: _messageController,
+                    decoration: const InputDecoration(
+                      labelText: 'Type a message...',
+                    ),
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.send),
-                  onPressed: () => _sendMessage('user1', 'user2'),
+                  onPressed: () => _sendMessage('User1'),
                 ),
               ],
-            ),
+            )
           ],
         ),
       ),

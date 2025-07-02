@@ -9,6 +9,7 @@ import '../../keypair/data/repositories/keypair_repository_impl.dart';
 import '../../keypair/data/repositories/keypair_upload_repository_impl.dart';
 import '../../keypair/data/repositories/shared_secret_repository_impl.dart';
 import '../../keypair/domain/entities/keypair_entity.dart';
+import '../../chat/presentation/chat_page.dart';
 
 class KeyPairPage extends StatefulWidget {
   const KeyPairPage({super.key});
@@ -19,7 +20,7 @@ class KeyPairPage extends StatefulWidget {
 
 class _KeyPairPageState extends State<KeyPairPage> {
   final KeyPairLocalStorage _secureStorage = KeyPairLocalStorage();
-  final String baseUrl = 'https://dropweb.cloud'; // Your backend URL
+  final String baseUrl = 'https://dropweb.cloud';
 
   KeyPairEntity? _user1KeyPair;
   KeyPairEntity? _user2KeyPair;
@@ -47,7 +48,6 @@ class _KeyPairPageState extends State<KeyPairPage> {
       final keyPair = await generateKeyUseCase.call();
 
       if (_tapCount == 0) {
-        // User 1
         _user1KeyPair = keyPair;
         await uploadKeyUseCase.call(
           userId: 'user1',
@@ -59,7 +59,6 @@ class _KeyPairPageState extends State<KeyPairPage> {
         _user1Pub = base64Encode(keyPair.publicKey);
         _uploadStatus = 'User 1 keys uploaded.';
       } else if (_tapCount == 1) {
-        // User 2
         _user2KeyPair = keyPair;
         await uploadKeyUseCase.call(
           userId: 'user2',
@@ -71,9 +70,9 @@ class _KeyPairPageState extends State<KeyPairPage> {
         _user2Pub = base64Encode(keyPair.publicKey);
         _uploadStatus = 'User 2 keys uploaded.';
 
-        // Now generate shared secret locally
-        final sharedSecretUseCase =
-            GenerateSharedSecretUseCase(SharedSecretRepositoryImpl());
+        final sharedSecretUseCase = GenerateSharedSecretUseCase(
+          SharedSecretRepositoryImpl(),
+        );
 
         final secret = await sharedSecretUseCase.call(
           myPrivateKey: _user1KeyPair!.privateKey,
@@ -85,6 +84,13 @@ class _KeyPairPageState extends State<KeyPairPage> {
 
         _sharedSecret = encodedSecret;
         _sharedSecretStatus = 'Shared secret generated and stored locally.';
+
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ChatPage(sharedSecret: secret)),
+          );
+        }
       } else {
         _uploadStatus = 'All keys generated.';
       }
@@ -128,8 +134,8 @@ class _KeyPairPageState extends State<KeyPairPage> {
                   _tapCount == 0
                       ? 'Generate & Upload for User 1'
                       : _tapCount == 1
-                          ? 'Generate & Upload for User 2'
-                          : 'Completed',
+                      ? 'Generate & Upload for User 2'
+                      : 'Completed',
                 ),
               ),
               const SizedBox(height: 20),

@@ -7,12 +7,10 @@ class SharedSecretRepositoryImpl implements SharedSecretRepository {
   @override
   Future<List<int>> generateSharedSecret({
     required List<int> myPrivateKey,
-    required List<int> myPublicKey,
     required List<int> otherPublicKey,
   }) async {
     final privateKey = SimpleKeyPairData(
       myPrivateKey,
-      publicKey: SimplePublicKey(myPublicKey, type: KeyPairType.x25519),
       type: KeyPairType.x25519,
     );
 
